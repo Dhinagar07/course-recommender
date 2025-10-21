@@ -18,7 +18,7 @@ export default function HomePage() {
       let data;
       if (session?.user?.id) {
         // Logged-in user → fetch from recommendation server
-        const res = await fetch(`http://127.0.0.1:5000/recommend?user_id=${session.user.id}&k=100`);
+        const res = await fetch(`http://127.0.0.1:5000/recommend?user_id=${session.user.id}&k=1000`);
         data = await res.json();
         data.courses=data.recommendations || [];
         console.log('Fetched recommended courses:', data);
