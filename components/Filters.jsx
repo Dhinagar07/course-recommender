@@ -83,13 +83,13 @@ export default function Filters({ onFilter }) {
         />
 
         {/* Topic */}
-        <input
+        {/* <input
           type="text"
           placeholder="Topic"
           value={filters.topic}
           onChange={(e) => handleChange("topic", e.target.value)}
           className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-        />
+        /> */}
 
         {/* Language */}
         <select
