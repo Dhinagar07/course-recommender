@@ -37,12 +37,13 @@ export default function CoursesGrid({ courses, loading }) {
         "user_subscribed",
       ];
       const isEnrolled = keys.some((k) => !!course?.[k]);
-      states[course.id] = { enrolling: false, isEnrolled, error: "" };
+      states[course.course_id] = { enrolling: false, isEnrolled, error: "" };
     });
     setEnrollStates(states);
   }, [courses]);
 
   const handleEnroll = async (courseId) => {
+    console.log(courseId);
     const state = enrollStates[courseId];
     if (!state || state.enrolling || state.isEnrolled) return;
     if (status === "loading") return;
@@ -117,14 +118,17 @@ export default function CoursesGrid({ courses, loading }) {
     <>
       <div className="p-6 md:p-10">
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10">
-          {courses.map((course) => {
-            const state = enrollStates[course.id] || {};
+          {courses.map((course, index) => {
+            // console.log(course)
+            // console.log(course.course_id);
+            const key = course?.course_id || `course-${index}`;
+            const state = enrollStates[course.course_id] || {};
             const rating = course?.avg_rating ?? "N/A";
             const subscribers = Number(course?.num_subscribers ?? 0);
 
             return (
               <div
-                key={course.id}
+                key={key}
                 className="relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-transform duration-300 hover:-translate-y-1 border border-gray-100 p-6 flex flex-col justify-between"
               >
                 <div>
@@ -172,7 +176,7 @@ export default function CoursesGrid({ courses, loading }) {
                     <Info className="w-5 h-5" />
                   </button>
                   <button
-                    onClick={() => handleEnroll(course.id)}
+                    onClick={() => handleEnroll(course.course_id)}
                     disabled={state.isEnrolled || state.enrolling}
                     className={`p-3 rounded-full text-white shadow-md transition
                       ${

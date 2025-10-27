@@ -61,7 +61,6 @@ export default function Filters({ onFilter }) {
       </h2>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {/* Category */}
         <select
           value={filters.category}
           onChange={(e) => handleChange("category", e.target.value)}
@@ -73,7 +72,6 @@ export default function Filters({ onFilter }) {
           ))}
         </select>
 
-        {/* Subcategory */}
         <input
           type="text"
           placeholder="Subcategory"
@@ -82,7 +80,6 @@ export default function Filters({ onFilter }) {
           className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
         />
 
-        {/* Topic */}
         {/* <input
           type="text"
           placeholder="Topic"
@@ -91,7 +88,6 @@ export default function Filters({ onFilter }) {
           className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
         /> */}
 
-        {/* Language */}
         <select
           value={filters.language}
           onChange={(e) => handleChange("language", e.target.value)}
@@ -103,7 +99,6 @@ export default function Filters({ onFilter }) {
           ))}
         </select>
 
-        {/* Level */}
         <select
           value={filters.level}
           onChange={(e) => handleChange("level", e.target.value)}
@@ -115,7 +110,6 @@ export default function Filters({ onFilter }) {
           <option value="Advanced">Advanced</option>
         </select>
 
-        {/* Paid / Free */}
         <select
           value={filters.isPaid}
           onChange={(e) => handleChange("isPaid", e.target.value)}
@@ -126,7 +120,6 @@ export default function Filters({ onFilter }) {
           <option value="false">Free</option>
         </select>
 
-        {/* Min Rating */}
         <input
           type="number"
           placeholder="Min Rating (0 - 5)"
@@ -138,7 +131,6 @@ export default function Filters({ onFilter }) {
           className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
         />
 
-        {/* Max Price */}
         <input
           type="number"
           placeholder="Max Price (0 - 999.99)"

@@ -29,6 +29,7 @@ export default function DashboardPage() {
       setLoading(true);
       const response = await fetch("/api/courses/enrolled");
       const data = await response.json();
+      console.log(data);
       if (!response.ok)
         throw new Error(data.error || "Failed to fetch enrolled courses");
       setEnrolledCourses(data.courses || []);
@@ -56,7 +57,6 @@ export default function DashboardPage() {
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-6 py-12 space-y-10">
-        {/* Welcome Section */}
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-10 border border-gray-100 text-center sm:text-left">
           <h2 className="text-3xl font-extrabold text-gray-800 mb-3">
             Welcome,{" "}
@@ -73,14 +73,13 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        {/* Enrolled Courses Section */}
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-10 border border-gray-100">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
             <h3 className="text-2xl font-bold text-gray-800">
               📚 My Enrolled Courses
             </h3>
             <Link
-              href="/courses"
+              href="/"
               className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 shadow-sm transition-all"
             >
               Browse More Courses
@@ -126,7 +125,7 @@ export default function DashboardPage() {
                 Start your learning journey by exploring available courses!
               </p>
               <Link
-                href="/courses"
+                href="/"
                 className="mt-6 inline-block px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-sm transition-all"
               >
                 Explore Courses

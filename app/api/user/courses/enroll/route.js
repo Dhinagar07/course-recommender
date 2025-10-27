@@ -19,7 +19,7 @@ export async function POST(request) {
     }
 
     const { courseId } = await request.json();
-
+    console.log(courseId)
     if (!courseId) {
       return NextResponse.json({ error: 'Course ID is required' }, { status: 400 });
     }
