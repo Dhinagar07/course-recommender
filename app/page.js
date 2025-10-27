@@ -20,30 +20,27 @@ export default function HomePage() {
       let data;
 
       if (topic && topic.trim() !== "") {
-        // 🔍 Use /search endpoint when user searches
         const url = `http://127.0.0.1:5000/search?term=${encodeURIComponent(
           topic
-        )}&k=50`;
+        )}&k=100`;
         console.log("Searching courses for topic:", topic);
         const res = await fetch(url);
         data = await res.json();
         data.courses = data.results || [];
         if (!Array.isArray(data.courses)) data.courses = [];
       } else if (session?.user?.id) {
-        // 👤 Personalized recommendations
         let url = `http://127.0.0.1:5000/recommend?user_id=${session.user.id}&k=100`;
         const res = await fetch(url);
         data = await res.json();
         data.courses = data.recommendations || [];
         if (!Array.isArray(data.courses)) data.courses = [];
       } else {
-        // 🧩 Not logged in → fallback random
         console.log("not logged in or not available");
         const res = await fetch("/api/courses/random");
         const randomData = await res.json();
         data = randomData.success ? randomData : { courses: [] };
       }
-
+      console.log(data.courses);
       setCourses(data.courses);
       setFilteredCourses(data.courses);
     } catch (err) {
@@ -61,282 +58,141 @@ export default function HomePage() {
     }
   }, [status]);
 
-  // const applyKbFilters = (filters) => {
-  //   const RELAXATION_ORDER = [
-  //     "minRating",
-  //     "maxPrice",
-  //     "minDuration",
-  //     "subcategory",
-  //     "category",
-  //     "language",
-  //     "isPaid",
-  //   ];
+const applyKbFilters = async (filters) => {
+  const RELAXATION_ORDER = [
+    "minRating",
+    "maxPrice",
+    "minDuration",
+    "subcategory",
+    "category",
+    "language",
+    "isPaid",
+  ];
 
-  //   const RELAXATION_STRATEGIES = {
-  //     minRating: { type: "decrement", value: 0.5 },
-  //     maxPrice: { type: "increment", value: 100 },
-  //     minDuration: { type: "decrement", value: 10 },
-  //     subcategory: { type: "remove" },
-  //     category: { type: "remove" },
-  //     language: { type: "remove" },
-  //     isPaid: { type: "remove" },
-  //   };
+  const RELAXATION_STRATEGIES = {
+    minRating: { type: "decrement", value: 0.5 },
+    maxPrice: { type: "increment", value: 100 },
+    minDuration: { type: "decrement", value: 10 },
+    subcategory: { type: "remove" },
+    category: { type: "remove" },
+    language: { type: "remove" },
+    isPaid: { type: "remove" },
+  };
 
-  //   const safeParse = (val, fallback) =>
-  //     val !== undefined && val !== null && val !== "" && !isNaN(parseFloat(val))
-  //       ? parseFloat(val)
-  //       : fallback;
+  const safeParse = (val, fallback) =>
+    val !== undefined && val !== null && val !== "" && !isNaN(parseFloat(val))
+      ? parseFloat(val)
+      : fallback;
 
-  //   let currentConstraints = {
-  //     minRating: safeParse(filters.minRating, 0),
-  //     maxPrice: safeParse(filters.maxPrice, Infinity),
-  //     minDuration: safeParse(filters.minDuration, 0),
-  //     maxDuration: safeParse(filters.maxDuration, Infinity),
-  //     category: filters.category || null,
-  //     subcategory: filters.subcategory || null,
-  //     language: filters.language || null,
-  //     isPaid:
-  //       filters.isPaid !== ""
-  //         ? filters.isPaid === "true" || filters.isPaid === true
-  //         : null,
-  //     topic: filters.topic || null,
-  //   };
+  let currentConstraints = {
+    minRating: safeParse(filters.minRating, 0),
+    maxPrice: safeParse(filters.maxPrice, Infinity),
+    minDuration: safeParse(filters.minDuration, 0),
+    maxDuration: safeParse(filters.maxDuration, Infinity),
+    category: filters.category || null,
+    subcategory: filters.subcategory || null,
+    language: filters.language || null,
+    isPaid:
+      filters.isPaid !== ""
+        ? filters.isPaid === "true" || filters.isPaid === true
+        : null,
+    topic: filters.topic || null,
+  };
 
-  //   let filtered = [];
-  //   const history = [];
+  let filtered = [];
+  const history = [];
 
-  //   const filterCourses = (constraints) => {
-  //     return courses.filter((course) => {
-  //       if (constraints.category && course.category !== constraints.category)
-  //         return false;
-  //       if (
-  //         constraints.subcategory &&
-  //         course.subcategory !== constraints.subcategory
-  //       )
-  //         return false;
-  //       if (constraints.language && course.language !== constraints.language)
-  //         return false;
-  //       if (
-  //         constraints.isPaid !== null &&
-  //         course.is_paid !== constraints.isPaid
-  //       )
-  //         return false;
-  //       if (
-  //         constraints.minRating &&
-  //         (course.avg_rating || 0) < constraints.minRating
-  //       )
-  //         return false;
-  //       if (constraints.maxPrice && (course.price || 0) > constraints.maxPrice)
-  //         return false;
-  //       if (
-  //         constraints.minDuration &&
-  //         (course.content_length_min || 0) < constraints.minDuration
-  //       )
-  //         return false;
-  //       if (
-  //         constraints.maxDuration &&
-  //         (course.content_length_min || 0) > constraints.maxDuration
-  //       )
-  //         return false;
-  //       if (
-  //         constraints.topic &&
-  //         !(course.title || "")
-  //           .toLowerCase()
-  //           .includes(constraints.topic.toLowerCase())
-  //       )
-  //         return false;
-  //       return true;
-  //     });
-  //   };
+  const filterCourses = (constraints, dataset) => {
+    if (!Array.isArray(dataset)) return [];
+    return dataset.filter((course) => {
+      if (constraints.category && (course.category || null) !== constraints.category)
+        return false;
+      if (
+        constraints.subcategory &&
+        (course.subcategory || null) !== constraints.subcategory
+      )
+        return false;
+      if (constraints.language && (course.language || null) !== constraints.language)
+        return false;
+      if (
+        constraints.isPaid !== null &&
+        (course.is_paid === undefined ? null : course.is_paid) !== constraints.isPaid
+      )
+        return false;
+      if (
+        constraints.minRating &&
+        (course.avg_rating || 0) < constraints.minRating
+      )
+        return false;
+      if (constraints.maxPrice !== Infinity && (course.price || 0) > constraints.maxPrice)
+        return false;
+      if (
+        constraints.minDuration &&
+        (course.content_length_min || 0) < constraints.minDuration
+      )
+        return false;
+      if (
+        constraints.maxDuration !== Infinity &&
+        (course.content_length_min || 0) > constraints.maxDuration
+      )
+        return false;
+      if (
+        constraints.topic &&
+        !(course.title || "").toLowerCase().includes(constraints.topic.toLowerCase())
+      )
+        return false;
+      return true;
+    });
+  };
 
-  //   for (let step = 0; step <= RELAXATION_ORDER.length; step++) {
-  //     filtered = filterCourses(currentConstraints);
-  //     if (filtered.length > 0) break;
+  const neutralize = (key) => {
+    if (key === "minRating") return 0;
+    if (key === "maxPrice") return Infinity;
+    if (key === "minDuration") return 0;
+    if (key === "maxDuration") return Infinity;
+    if (key === "isPaid") return null;
+    return null;
+  };
 
-  //     if (step === RELAXATION_ORDER.length) break;
+  const findConflicts = (entries, dataset) => {
+    const conflicts = [];
+    for (const [key] of entries) {
+      const saved = currentConstraints[key];
+      currentConstraints[key] = neutralize(key);
+      const pass = filterCourses(currentConstraints, dataset);
+      currentConstraints[key] = saved;
+      if (pass.length > 0) conflicts.push(key);
+    }
+    return conflicts;
+  };
 
-  //     const key = RELAXATION_ORDER[step];
-  //     const strategy = RELAXATION_STRATEGIES[key];
-  //     if (!strategy) continue;
+  filtered = filterCourses(currentConstraints, courses);
 
-  //     switch (strategy.type) {
-  //       case "decrement":
-  //         if (currentConstraints[key] > 0) {
-  //           const oldVal = currentConstraints[key];
-  //           currentConstraints[key] = Math.max(0, oldVal - strategy.value);
-  //           history.push(
-  //             `Relaxed ${key}: ${oldVal} → ${currentConstraints[key]}`
-  //           );
-  //         }
-  //         break;
-  //       case "increment":
-  //         const oldValInc = currentConstraints[key];
-  //         currentConstraints[key] = oldValInc + strategy.value;
-  //         history.push(
-  //           `Relaxed ${key}: ${oldValInc} → ${currentConstraints[key]}`
-  //         );
-  //         break;
-  //       case "remove":
-  //         if (currentConstraints[key] !== null) {
-  //           history.push(`Removed ${key} filter`);
-  //           currentConstraints[key] = null;
-  //         }
-  //         break;
-  //     }
-  //   }
+  let backendList = [];
 
-  //   const safeMax = (arr, key) => {
-  //     const vals = arr.map((c) => c[key] || 0);
-  //     return vals.length ? Math.max(...vals) || 1 : 1;
-  //   };
-
-  //   const maxSubscribers = safeMax(filtered, "num_subscribers");
-  //   const maxReviews = safeMax(filtered, "num_reviews");
-  //   const maxLectures = safeMax(filtered, "num_lectures");
-
-  //   filtered = filtered.map((course) => {
-  //     let score = 0;
-  //     if (course.avg_rating) score += (course.avg_rating / 5) * 40;
-  //     if (course.num_subscribers)
-  //       score += (course.num_subscribers / maxSubscribers) * 30;
-  //     if (course.num_reviews) score += (course.num_reviews / maxReviews) * 20;
-  //     if (course.num_lectures)
-  //       score += (course.num_lectures / maxLectures) * 10;
-  //     return { ...course, kb_score: Math.round(score * 100) / 100 };
-  //   });
-
-  //   filtered.sort(
-  //     (a, b) => b.kb_score - a.kb_score || b.num_subscribers - a.num_subscribers
-  //   );
-
-  //   if (filtered.length === 0) {
-  //     history.push("No courses found even after relaxing filters.");
-  //   }
-
-  //   setRelaxationHistory(history);
-  //   setFilteredCourses(filtered.slice(0, 30));
-  // };
-  const applyKbFilters = (filters) => {
-    const RELAXATION_ORDER = [
-      "minRating",
-      "maxPrice",
-      "minDuration",
-      "subcategory",
-      "category",
-      "language",
-      "isPaid",
-    ];
-
-    const RELAXATION_STRATEGIES = {
-      minRating: { type: "decrement", value: 0.5 },
-      maxPrice: { type: "increment", value: 100 },
-      minDuration: { type: "decrement", value: 10 },
-      subcategory: { type: "remove" },
-      category: { type: "remove" },
-      language: { type: "remove" },
-      isPaid: { type: "remove" },
-    };
-
-    const safeParse = (val, fallback) =>
-      val !== undefined && val !== null && val !== "" && !isNaN(parseFloat(val))
-        ? parseFloat(val)
-        : fallback;
-
-    let currentConstraints = {
-      minRating: safeParse(filters.minRating, 0),
-      maxPrice: safeParse(filters.maxPrice, Infinity),
-      minDuration: safeParse(filters.minDuration, 0),
-      maxDuration: safeParse(filters.maxDuration, Infinity),
-      category: filters.category || null,
-      subcategory: filters.subcategory || null,
-      language: filters.language || null,
-      isPaid:
-        filters.isPaid !== ""
-          ? filters.isPaid === "true" || filters.isPaid === true
-          : null,
-      topic: filters.topic || null,
-    };
-
-    let filtered = [];
-    const history = [];
-
-    const filterCourses = (constraints) => {
-      return courses.filter((course) => {
-        if (constraints.category && course.category !== constraints.category)
-          return false;
-        if (
-          constraints.subcategory &&
-          course.subcategory !== constraints.subcategory
-        )
-          return false;
-        if (constraints.language && course.language !== constraints.language)
-          return false;
-        if (
-          constraints.isPaid !== null &&
-          course.is_paid !== constraints.isPaid
-        )
-          return false;
-        if (
-          constraints.minRating &&
-          (course.avg_rating || 0) < constraints.minRating
-        )
-          return false;
-        if (constraints.maxPrice && (course.price || 0) > constraints.maxPrice)
-          return false;
-        if (
-          constraints.minDuration &&
-          (course.content_length_min || 0) < constraints.minDuration
-        )
-          return false;
-        if (
-          constraints.maxDuration &&
-          (course.content_length_min || 0) > constraints.maxDuration
-        )
-          return false;
-        if (
-          constraints.topic &&
-          !(course.title || "")
-            .toLowerCase()
-            .includes(constraints.topic.toLowerCase())
-        )
-          return false;
-        return true;
+  if (filtered.length === 0) {
+    try {
+      const response = await fetch("http://127.0.0.1:5000/filter/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(currentConstraints),
       });
-    };
+      const backendResp = await response.json();
+      backendList = Array.isArray(backendResp.results) ? backendResp.results : [];
+    } catch (e) {
+      backendList = [];
+    }
 
-    const isConsistent = (subset) => {
-      const partialConstraints = Object.fromEntries(subset);
-      return (
-        filterCourses({ ...currentConstraints, ...partialConstraints }).length >
-        0
-      );
-    };
-
-    const quickXplain = (constraints) => {
-      if (isConsistent(constraints)) return [];
-      if (constraints.length <= 1) return constraints;
-      const mid = Math.floor(constraints.length / 2);
-      const left = constraints.slice(0, mid);
-      const right = constraints.slice(mid);
-      const leftConflict = quickXplain(left, (c) =>
-        isConsistent([...c, ...right])
-      );
-      const rightConflict = quickXplain(right, (c) =>
-        isConsistent([...left, ...c])
-      );
-      return [...leftConflict, ...rightConflict];
-    };
-
-    filtered = filterCourses(currentConstraints);
+    filtered = filterCourses(currentConstraints, backendList);
 
     if (filtered.length === 0) {
       const constraintEntries = Object.entries(currentConstraints).filter(
         ([k, v]) => v !== null && v !== undefined
       );
-      const conflicting = quickXplain(constraintEntries);
+      const conflictingKeys = findConflicts(constraintEntries, backendList.length ? backendList : courses);
 
-      if (conflicting.length > 0) {
-        for (const [key] of conflicting) {
+      if (conflictingKeys.length > 0) {
+        for (const key of conflictingKeys) {
           const strategy = RELAXATION_STRATEGIES[key];
           if (!strategy) continue;
           switch (strategy.type) {
@@ -344,23 +200,18 @@ export default function HomePage() {
               if (currentConstraints[key] > 0) {
                 const oldVal = currentConstraints[key];
                 currentConstraints[key] = Math.max(0, oldVal - strategy.value);
-                history.push(
-                  `QuickXplain relaxed ${key}: ${oldVal} → ${currentConstraints[key]}`
-                );
+                history.push(`QuickXplain relaxed ${key}: ${oldVal} → ${currentConstraints[key]}`);
               }
               break;
             case "increment":
               const oldValInc = currentConstraints[key];
               if (isFinite(oldValInc)) {
                 currentConstraints[key] = oldValInc + strategy.value;
-                history.push(
-                  `Relaxed ${key}: ${oldValInc} → ${currentConstraints[key]}`
-                );
+                history.push(`Relaxed ${key}: ${oldValInc} → ${currentConstraints[key]}`);
               } else {
                 history.push(`Skipped relaxing ${key} (already unconstrained)`);
               }
               break;
-
             case "remove":
               if (currentConstraints[key] !== null) {
                 history.push(`QuickXplain removed ${key}`);
@@ -372,7 +223,7 @@ export default function HomePage() {
       }
 
       for (let step = 0; step <= RELAXATION_ORDER.length; step++) {
-        filtered = filterCourses(currentConstraints);
+        filtered = filterCourses(currentConstraints, backendList.length ? backendList : courses);
         if (filtered.length > 0) break;
         if (step === RELAXATION_ORDER.length) break;
         const key = RELAXATION_ORDER[step];
@@ -383,17 +234,19 @@ export default function HomePage() {
             if (currentConstraints[key] > 0) {
               const oldVal = currentConstraints[key];
               currentConstraints[key] = Math.max(0, oldVal - strategy.value);
-              history.push(
-                `Relaxed ${key}: ${oldVal} → ${currentConstraints[key]}`
-              );
+              history.push(`Relaxed ${key}: ${oldVal} → ${currentConstraints[key]}`);
             }
             break;
           case "increment":
-            const oldValInc = currentConstraints[key];
-            currentConstraints[key] = oldValInc + strategy.value;
-            history.push(
-              `Relaxed ${key}: ${oldValInc} → ${currentConstraints[key]}`
-            );
+            {
+              const oldValInc = currentConstraints[key];
+              if (isFinite(oldValInc)) {
+                currentConstraints[key] = oldValInc + strategy.value;
+                history.push(`Relaxed ${key}: ${oldValInc} → ${currentConstraints[key]}`);
+              } else {
+                history.push(`Skipped relaxing ${key} (already unconstrained)`);
+              }
+            }
             break;
           case "remove":
             if (currentConstraints[key] !== null) {
@@ -403,39 +256,40 @@ export default function HomePage() {
             break;
         }
       }
+      filtered = filterCourses(currentConstraints, backendList.length ? backendList : courses);
     }
+  }
 
-    const safeMax = (arr, key) => {
-      const vals = arr.map((c) => c[key] || 0);
-      return vals.length ? Math.max(...vals) || 1 : 1;
-    };
-
-    const maxSubscribers = safeMax(filtered, "num_subscribers");
-    const maxReviews = safeMax(filtered, "num_reviews");
-    const maxLectures = safeMax(filtered, "num_lectures");
-
-    filtered = filtered.map((course) => {
-      let score = 0;
-      if (course.avg_rating) score += (course.avg_rating / 5) * 40;
-      if (course.num_subscribers)
-        score += (course.num_subscribers / maxSubscribers) * 30;
-      if (course.num_reviews) score += (course.num_reviews / maxReviews) * 20;
-      if (course.num_lectures)
-        score += (course.num_lectures / maxLectures) * 10;
-      return { ...course, kb_score: Math.round(score * 100) / 100 };
-    });
-
-    filtered.sort(
-      (a, b) => b.kb_score - a.kb_score || b.num_subscribers - a.num_subscribers
-    );
-
-    if (filtered.length === 0) {
-      history.push("No courses found even after relaxing filters.");
-    }
-
-    setRelaxationHistory(history);
-    setFilteredCourses(filtered.slice(0, 30));
+  const safeMax = (arr, key) => {
+    const vals = arr.map((c) => c[key] || 0);
+    return vals.length ? Math.max(...vals) || 1 : 1;
   };
+
+  const maxSubscribers = safeMax(filtered, "num_subscribers");
+  const maxReviews = safeMax(filtered, "num_reviews");
+  const maxLectures = safeMax(filtered, "num_lectures");
+
+  filtered = filtered.map((course) => {
+    let score = 0;
+    if (course.avg_rating) score += (course.avg_rating / 5) * 40;
+    if (course.num_subscribers)
+      score += (course.num_subscribers / maxSubscribers) * 30;
+    if (course.num_reviews) score += (course.num_reviews / maxReviews) * 20;
+    if (course.num_lectures)
+      score += (course.num_lectures / maxLectures) * 10;
+    return { ...course, kb_score: Math.round(score * 100) / 100 };
+  });
+
+  filtered.sort((a, b) => b.kb_score - a.kb_score || (b.num_subscribers || 0) - (a.num_subscribers || 0));
+
+  if (filtered.length === 0) {
+    history.push("No courses found even after relaxing filters.");
+  }
+
+  setRelaxationHistory(history);
+  setFilteredCourses(filtered.slice(0, 30));
+};
+
 
   const handleSearch = async (e) => {
     e.preventDefault();
